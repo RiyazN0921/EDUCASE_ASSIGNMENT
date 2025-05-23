@@ -1,17 +1,23 @@
-const mysql = require('mysql2');
-const dotenv = require('dotenv');
-dotenv.config();
+const { Sequelize } = require('sequelize')
 
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'test'
-});
+require('dotenv').config()
 
-db.connect((err) => {
-  if (err) throw err;
-  console.log('MySQL Connected');
-});
+const sequelize = new Sequelize(
+  'freedb_educase',
+  'freedb_educase',
+  'q6j@zrPd?Zx$gEY',
+  {
+    host: 'sql.freedb.tech',
+    dialect: 'mysql',
+    port: 3306,
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+  },
+)
 
-module.exports = db;
+module.exports = sequelize

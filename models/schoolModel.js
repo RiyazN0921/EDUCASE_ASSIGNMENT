@@ -1,31 +1,40 @@
-// models/School.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); 
+const { DataTypes } = require('sequelize')
 
-const School = sequelize.define('School', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-  },
-  address: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-  },
-  latitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-  longitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false,
-  },
-}, {
-  timestamps: true,
-});
+const sequelize = require('../config/db.config')
 
-module.exports = School;
+const School = sequelize.define(
+  'School',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    latitude: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    longitude: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    tableName: 'schools',
+    timestamps: false,
+  },
+)
+
+module.exports = School
