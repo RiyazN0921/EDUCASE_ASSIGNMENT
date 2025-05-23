@@ -1,61 +1,71 @@
-const db = require('../config/db');
+const School = require('../models/schoolModel')
 
-function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; 
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+const { successResponse, errorResponse } = require('../utils/helper')
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+const { calculateDistance } = require('../utils/helper')
+
+/**
+ * Add a new school
+ * @route POST /api/schools/addSchool
+ */
+exports.addSchool = async (req, res) => {
+  try {
+    const { name, address, latitude, longitude } = req.body
+
+    if (!name || !address || !latitude || !longitude) {
+      return errorResponse(res, 'All fields are required', 400)
+    }
+
+    const school = await School.create({ name, address, latitude, longitude })
+
+    successResponse(res, 'School added successfully', school)
+  } catch (error) {
+    console.error('Error adding school:', error)
+    errorResponse(res, 'Failed to add school', 500)
+  }
 }
 
-exports.addSchool = (req, res) => {
-  const { name, address, latitude, longitude } = req.body;
+/**
+ * List schools sorted by proximity
+ * @route GET /api/schools/listSchools
+ * @query {latitude, longitude} User's location
+ */
+exports.listSchools = async (req, res) => {
+  try {
+    let { latitude, longitude } = req.query
 
-  if (!name || !address || latitude == null || longitude == null) {
-    return res.status(400).json({ error: 'All fields are required.' });
-  }
-
-  const query = `INSERT INTO schools (name, address, latitude, longitude) VALUES (?, ?, ?, ?)`;
-  db.query(query, [name, address, latitude, longitude], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'School added successfully', schoolId: result.insertId });
-  });
-};
-
-exports.listSchools = (req, res) => {
-  const lat = parseFloat(req.query.latitude);
-  const lon = parseFloat(req.query.longitude);
-
-  if (isNaN(lat) || isNaN(lon)) {
-    return res.status(400).json({ error: 'Latitude and longitude must be valid numbers.' });
-  }
-
-  db.query('SELECT * FROM schools', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    try {
-      const sortedSchools = results
-        .map((school) => {
-          const distance = getDistanceFromLatLonInKm(
-            lat,
-            lon,
-            school.latitude,
-            school.longitude
-          );
-          return { ...school, distance };
-        })
-        .sort((a, b) => a.distance - b.distance);
-
-      res.json(sortedSchools);
-    } catch (e) {
-      res.status(500).json({ error: 'Error calculating distances.' });
+    if (!latitude || !longitude) {
+      return errorResponse(res, 'Latitude and Longitude are required', 400)
     }
-  });
-};
 
+    latitude = parseFloat(latitude)
+    longitude = parseFloat(longitude)
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return errorResponse(res, 'Invalid latitude or longitude format', 400)
+    }
+
+    const schools = await School.findAll()
+
+    if (!schools.length) {
+      return successResponse(res, 'No schools found', [])
+    }
+
+    const sortedSchools = schools
+      .map((school) => ({
+        ...school.dataValues,
+        distance: calculateDistance(
+          latitude,
+          longitude,
+          school.latitude,
+          school.longitude,
+        ),
+      }))
+      .sort((a, b) => a.distance - b.distance)
+
+    return successResponse(res, 'Schools fetched successfully', sortedSchools)
+  } catch (error) {
+    console.error('Error fetching schools:', error)
+    return errorResponse(res, 'Failed to fetch schools', 500)
+  }
+}
