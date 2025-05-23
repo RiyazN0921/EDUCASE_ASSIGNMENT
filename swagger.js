@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:9000', 
+        url: 'https://educase-assignment-wart.onrender.com', 
       },
     ],
   },
